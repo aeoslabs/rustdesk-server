@@ -24,7 +24,11 @@ UDP registration is unchanged.
 
 ## Build
 
+The image `videovault/rustdesk-hbbs:vv-ws-register-<short sha>` is built from
+`docker-vv/Dockerfile.build` by the `vv-ops images` workflow in aeoslabs/video-vault:
+
 ```sh
-cargo build --release --bin hbbs
-cp target/release/hbbs docker-vv/ && docker build -t vv/rustdesk-hbbs:1.1.16-vv1 docker-vv
+docker build -f docker-vv/Dockerfile.build -t videovault/rustdesk-hbbs:vv-ws-register-<short sha> .
 ```
+
+`docker-vv/Dockerfile` packs a binary built beforehand (`cargo build --release --bin hbbs`).

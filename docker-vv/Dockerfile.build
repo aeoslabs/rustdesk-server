@@ -1,0 +1,16 @@
+# VideoVault hbbs image, built from source in one step (used by CI):
+#   docker build -f docker-vv/Dockerfile.build -t <image> .
+FROM rust:1-bookworm AS build
+RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY . .
+RUN cargo build --release --bin hbbs
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=build /src/target/release/hbbs /usr/bin/hbbs
+WORKDIR /root
+ENV HOME=/root
+EXPOSE 21115 21116 21116/udp 21118
