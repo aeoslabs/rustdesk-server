@@ -128,6 +128,7 @@ impl RendezvousServer {
         let ws_port = port + 2;
         let pm = PeerMap::new().await?;
         log::info!("serial={}", serial);
+        crate::staff_token::announce();
         let rendezvous_servers = get_servers(&get_arg("rendezvous-servers"), "rendezvous-servers");
         log::info!("Listening on tcp/udp :{}", port);
         log::info!("Listening on tcp :{}, extra port for NAT test", nat_port);
@@ -460,6 +461,12 @@ impl RendezvousServer {
                     if let Some(sink) = sink.take() {
                         self.tcp_punch.lock().await.insert(try_into_v4(addr), sink);
                     }
+                    // VideoVault staff lock: refused like an unknown peer (no answer). The
+                    // token is for us only, so it never travels on to the editor's peer.
+                    if !crate::staff_token::allow("relay", addr, &rf.id, &rf.token) {
+                        return true;
+                    }
+                    rf.token = Default::default();
                     if let Some(peer) = self.pm.get_in_memory(&rf.id).await {
                         let mut msg_out = RendezvousMessage::new();
                         rf.socket_addr = AddrMangle::encode(addr).into();
@@ -825,6 +832,15 @@ impl RendezvousServer {
             let mut msg_out = RendezvousMessage::new();
             msg_out.set_punch_hole_response(PunchHoleResponse {
                 failure: punch_hole_response::Failure::LICENSE_MISMATCH.into(),
+                ..Default::default()
+            });
+            return Ok((msg_out, None));
+        }
+        // VideoVault staff lock: without a valid staff token the peer looks offline.
+        if !crate::staff_token::allow("punch", addr, &ph.id, &ph.token) {
+            let mut msg_out = RendezvousMessage::new();
+            msg_out.set_punch_hole_response(PunchHoleResponse {
+                failure: punch_hole_response::Failure::OFFLINE.into(),
                 ..Default::default()
             });
             return Ok((msg_out, None));
