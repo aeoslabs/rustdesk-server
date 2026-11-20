@@ -60,7 +60,9 @@ connection; peers registering and accepting are not checked at all.
   machine never sees a staff token.
 - Every check logs one line with the requester address, target peer id, the token's
   `who` (the claimed `who` when the token is invalid), the reason, the mode and the
-  outcome: `staff-lock: punch from <addr> to peer <id> who=<who> token=valid mode=enforce -> allowed`.
+  outcome: `staff-lock: punch from <addr> to peer <id> who=<who> check=ok mode=enforce -> allowed`
+  (or `check=failed (<reason>)`). The wording avoids `token=` and `secret=`, which
+  ssh-nas and the logs gateway mask.
 
 hbbr is unchanged. It pairs two connections by uuid, and a peer only connects to hbbr
 with a uuid it got through hbbs (from a `PunchHole` it answers with its own new uuid,

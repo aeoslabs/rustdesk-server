@@ -67,10 +67,11 @@ static SETTINGS: Lazy<Settings> = Lazy::new(|| Settings {
 /// Logs the mode once at start, and whether a secret is set (never the secret).
 pub fn announce() {
     let s = &*SETTINGS;
+    // Worded without "secret=" or "token=", which log viewers mask (ssh-nas, logs gateway).
     log::info!(
-        "staff-lock: mode={} secret={}",
+        "staff-lock: mode={}, staff secret {}",
         s.mode.name(),
-        if s.secret.is_empty() { "missing" } else { "set" }
+        if s.secret.is_empty() { "missing" } else { "present" }
     );
     if s.mode != Mode::Off && s.secret.len() < 32 {
         log::error!(
@@ -179,7 +180,7 @@ pub fn allow(kind: &str, addr: SocketAddr, peer_id: &str, token: &str) -> bool {
     match verify(token, &s.secret, now) {
         Ok(who) => {
             log::info!(
-                "staff-lock: {} from {} to peer {} who={} token=valid mode={} -> allowed",
+                "staff-lock: {} from {} to peer {} who={} check=ok mode={} -> allowed",
                 kind, addr, peer, who, s.mode.name()
             );
             true
@@ -187,7 +188,7 @@ pub fn allow(kind: &str, addr: SocketAddr, peer_id: &str, token: &str) -> bool {
         Err(reason) => {
             let allowed = s.mode == Mode::Log;
             log::warn!(
-                "staff-lock: {} from {} to peer {} who={} token=invalid ({}) mode={} -> {}",
+                "staff-lock: {} from {} to peer {} who={} check=failed ({}) mode={} -> {}",
                 kind,
                 addr,
                 peer,
